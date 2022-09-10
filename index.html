@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> أداة الحضور والغياب</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/3.1.0/octicons.min.css">
+    <link rel="stylesheet" href="//cdn.rawgit.com/morteza/bootstrap-rtl/v3.3.4/dist/css/bootstrap-rtl.min.css">
+
+    <!--[if lt IE 9]>
+      <script src="https://cdn.jsdelivr.net/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+      .badge-success{
+        color: #fff;
+        background-color: #43c500;
+      }
+      .badge-danger{
+        color: #fff;
+        background-color: #c50000;
+      }
+      .h3{}
+
+    </style>
+  </head>
+  <body>
+    <h3 class="text-center">أداة الحضور والغياب</h3>
+    <div class="panel panel-default">
+      <div class="panel-footer">
+        <h6 text-align ="right">تعليمات</h6>
+        <ol>
+          <li>أصدر تقرير الحضور لكل محاضرة</li>
+          <li>تأكد من نسبة الغياب المدخلة بالدقائق </li>
+        </ol>
+      </div>
+      <div class="panel-heading"> البيانات المطلوبة</div>
+      <div class="panel-body">
+
+          <form method="post" enctype="multipart/form-data">
+            <div class="form-group">
+              <label> ارفاق تقرير الحضور</label>
+              <input type="file" name="attend_file" id="attend_file">
+              <p class="help-block">يتمّ إرفاق ملف الحضور بصيغة CSV</p>
+            </div>
+            <div class="form-group">
+              <label>رقم عمود الوقت الكلي للحضور</label>
+              <input type="number" max="100" min="0" class="form-control" id="total_time" value="7">
+              <p class="help-block">العمود الذي يُمثل الوقت الكلي الذي حضره الطالب أثناء تواجده بالمحاضرة - مثال: عمود 6</p>
+            </div>
+            <div class="form-group">
+              <label>الوقت الإجمالي الكُلي (بالدقائق)</label>
+              <input type="number" class="form-control" id="prog_datetime" value="120">
+              <p class="help-block">الوقت الكُلي الذي يمثل حضور الطالب بالدقائق مثال: 120 دقيقة</p>
+            </div>
+            <div class="form-group ">
+              <button type="button" id="submit_files" class="btn btn-success">رفع الملفات والتحقق منها</button>
+            </div>
+          </form>
+      </div>
+
+    </div>
+    <hr>
+    <div class="panel panel-default">
+      <div class="panel-heading">النتائج</div>
+      <div class="panel-body" id="output">
+      </div>
+    </div>
+
+<!-- ?-->
+    <script src="https://cdn.jsdelivr.net/jquery/2.1.3/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="papaparse.min.js"></script>
+
+    <script type="text/javascript">
+      $(document).ready(function(){
+
+        function timeConvert(n) {
+          var num = n;
+          var hours = (num / 60);<!-- calucate  -->
+          var rhours = Math.floor(hours);<!-- reconvert to hourse without parts -->
+          var minutes = (hours - rhours) * 60; <!-- calculate muintes  -->
+          var rminutes = Math.round(minutes); <!--  calculate muintes without parts-->
+          return rhours + ":" + rminutes + ":00"; <!--timefinally -->
+        }
+
+        $('#submit_files').on("click",function(e){
+    		e.preventDefault();
+    		$('#attend_file').parse({
+    			config: {
+    				delimiter: "auto",
+    				complete: displayHTMLTable,
+    			},
+    			before: function(file, inputElem)
+    			{
+    				//console.log("Parsing file...", file);
+    			},
+    			error: function(err, file)
+    			{
+    				//console.log("ERROR:", err, file);
+    			},
+    			complete: function()
+    			{
+    				//console.log("Done with all files");
+    			}
+    		});
+
+        });
+
+    	function displayHTMLTable(results){
+    		var table = "<table class='table'>";
+    		var data = results.data;
+
+    		for(i=0;i<data.length-1;i++){
+    			table+= "<tr>";
+    			var row = data[i];
+          var total_time = $('#total_time').val();
+          var prog_datetime = $('#prog_datetime').val();
+          var absent_pers = $('#absent_pers').val();
+    			var cells = row.join(",").split(",");
+          //alert(cells[first_join_col]);
+
+    			for(j=0;j<cells.length;j++){
+    				table+= "<td>";
+    				table+= cells[j];
+    				table+= "</td>";
+    			}
+          if(i > 0){
+            var p = timeConvert(prog_datetime);
+            table+= "<td>";
+              if(cells[total_time-1] < p){
+                var status = '<span class="badge badge-danger">غائب</span>';
+              }else{
+                var status = '<span class="badge badge-success">حاضر</span>';
+              }
+              table+= status;
+            table+= "</td>";
+          }
+
+          else {
+            table+= "<td>";
+              table+= "Status";
+            table+= "</td>";
+          }
+    			table+= "</tr>";
+    		}
+    		table+= "</table>";
+    		$("#output").html(table);
+    	}
+      });
+    </script>
+  </body>
+</html>
